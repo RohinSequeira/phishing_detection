@@ -62,6 +62,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    async function highlightIssue(text, location) {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            await chrome.tabs.sendMessage(tab.id, {
+                action: "highlightText",
+                text: text,
+                location: location
+            });
+        } catch (error) {
+            console.error('Error highlighting text:', error);
+        }
+    }
+
+    function createClickableListItem(issue) {
+        const li = document.createElement('li');
+        li.textContent = issue.detail;
+        li.style.cursor = 'pointer';
+        li.style.padding = '5px';
+        li.style.marginBottom = '5px';
+        li.style.borderRadius = '4px';
+        li.style.transition = 'background-color 0.2s';
+        
+        // Add hover effect
+        li.addEventListener('mouseenter', () => {
+            li.style.backgroundColor = '#f0f0f0';
+        });
+        
+        li.addEventListener('mouseleave', () => {
+            li.style.backgroundColor = 'transparent';
+        });
+
+        // Add click handler
+        if (issue.text && issue.location) {
+            li.addEventListener('click', () => {
+                highlightIssue(issue.text, issue.location);
+            });
+            
+            // Add visual indicator that this is clickable
+            li.innerHTML += ' <span style="color: #6c5ce7; font-size: 12px;">(click to highlight)</span>';
+        }
+
+        return li;
+    }
+
     function displayResults(analysis) {
         results.style.display = 'block';
         
@@ -128,11 +172,29 @@ document.addEventListener('DOMContentLoaded', function() {
         riskLevel.className = `risk-level ${riskClass}`;
         riskLevel.textContent = riskText;
 
-        // Display details
-        if (analysis.details && analysis.details.length > 0) {
-            details.innerHTML = '<h3>Detected Issues:</h3><ul>' +
-                analysis.details.map(detail => `<li>${detail}</li>`).join('') +
-                '</ul>';
+        // Display details with clickable items
+        if ((analysis.highRiskFactors && analysis.highRiskFactors.length > 0) || 
+            (analysis.warnings && analysis.warnings.length > 0)) {
+            const detailsList = document.createElement('ul');
+            detailsList.style.listStyle = 'none';
+            detailsList.style.padding = '0';
+
+            // Add high risk factors
+            if (analysis.highRiskFactors) {
+                analysis.highRiskFactors.forEach(factor => {
+                    detailsList.appendChild(createClickableListItem(factor));
+                });
+            }
+
+            // Add warnings
+            if (analysis.warnings) {
+                analysis.warnings.forEach(warning => {
+                    detailsList.appendChild(createClickableListItem(warning));
+                });
+            }
+
+            details.innerHTML = '<h3>Detected Issues:</h3>';
+            details.appendChild(detailsList);
         } else {
             details.innerHTML = '<p>No suspicious elements detected.</p>';
         }
