@@ -36,7 +36,7 @@ A Chrome extension that helps users identify potential phishing attempts in thei
 
 1. Clone this repository or download the source code
 ```bash
-git clone [repository-url]
+git clone https://github.com/RohinSequeira/phishing_detection.git
 ```
 
 2. Open Chrome and navigate to `chrome://extensions/`
