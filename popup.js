@@ -65,49 +65,68 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayResults(analysis) {
         results.style.display = 'block';
         
-        // Reset all badges to inactive
+        // Hide all badges initially
         warningBadges.querySelectorAll('.badge').forEach(badge => {
-            badge.classList.remove('active');
+            badge.style.display = 'none';
         });
 
         // Determine risk level and set appropriate warnings
         let riskClass = '';
         let riskText = '';
         let recommendations = [];
+        let activeBadges = new Set();
 
+        // Collect all warning types from both high risk factors and warnings
+        if (analysis.highRiskFactors) {
+            analysis.highRiskFactors.forEach(factor => {
+                activeBadges.add(factor.type);
+            });
+        }
+        if (analysis.warnings) {
+            analysis.warnings.forEach(warning => {
+                activeBadges.add(warning.type);
+            });
+        }
+
+        // Show only relevant badges
+        activeBadges.forEach(type => {
+            const badge = warningBadges.querySelector(`[data-type="${type}"]`);
+            if (badge) {
+                badge.style.display = 'flex';
+                badge.classList.add('active');
+            }
+        });
+
+        // Set risk level and recommendations
         if (analysis.highRiskFactors && analysis.highRiskFactors.length > 0) {
             riskClass = 'high-risk';
             riskText = '🔴 High Risk - Likely Phishing Attempt';
-            recommendations.push('Do not click any links in this email');
-            recommendations.push('Do not download any attachments');
-            recommendations.push('Do not reply to this email');
-            recommendations.push('Report this email as phishing');
+            recommendations = [
+                'Do not click any links in this email',
+                'Do not download any attachments',
+                'Do not reply to this email',
+                'Report this email as phishing'
+            ];
         } else if (analysis.warnings && analysis.warnings.length > 0) {
             riskClass = 'suspicious';
             riskText = '🟡 Suspicious - Exercise Caution';
-            recommendations.push('Verify the sender through other means');
-            recommendations.push('Do not provide sensitive information');
-            recommendations.push('When in doubt, contact the company directly');
+            recommendations = [
+                'Verify the sender through other means',
+                'Do not provide sensitive information',
+                'When in doubt, contact the company directly'
+            ];
         } else {
             riskClass = 'low-risk';
             riskText = '🟢 Low Risk - No Obvious Red Flags';
-            recommendations.push('Always remain vigilant with email communications');
-            recommendations.push('Keep your security software up to date');
+            recommendations = [
+                'Always remain vigilant with email communications',
+                'Keep your security software up to date'
+            ];
         }
 
         // Set risk level
         riskLevel.className = `risk-level ${riskClass}`;
         riskLevel.textContent = riskText;
-
-        // Activate relevant warning badges
-        if (analysis.warnings) {
-            analysis.warnings.forEach(warning => {
-                const badge = warningBadges.querySelector(`[data-type="${warning.type}"]`);
-                if (badge) {
-                    badge.classList.add('active');
-                }
-            });
-        }
 
         // Display details
         if (analysis.details && analysis.details.length > 0) {
@@ -120,5 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Display recommendations
         recommendationsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+
+        // Show warning badges section only if there are active badges
+        warningBadges.style.display = activeBadges.size > 0 ? 'flex' : 'none';
     }
 }); 

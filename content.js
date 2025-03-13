@@ -74,135 +74,150 @@ function extractEmailContent() {
     return emailContent;
 }
 
-// Enhanced phishing detection rules
+// New risk-based analysis
 function analyzeEmail(emailContent) {
-    let score = 100;
+    let highRiskFactors = [];
+    let warnings = [];
     let details = [];
 
-    console.log('Starting analysis with score:', score);
-
-    // Check for suspicious sender domains
-    if (emailContent.sender) {
-        const senderDomain = emailContent.sender.split('@')[1];
-        const suspiciousDomains = ['free', 'temp', 'disposable', 'fake', 'temporary'];
-        if (senderDomain) {
-            for (const domain of suspiciousDomains) {
-                if (senderDomain.toLowerCase().includes(domain)) {
-                    score -= 20;
-                    details.push("Suspicious sender domain detected");
-                    console.log('Suspicious domain detected, new score:', score);
-                    break;
-                }
-            }
-        }
-    }
-
-    // Check for urgency keywords in subject
-    const urgencyKeywords = [
-        'urgent', 'immediate', 'action required', 'account suspended', 'suspicious activity',
-        'security alert', 'unauthorized', 'compromised', 'blocked', 'limited', 'verify',
-        'suspended', 'unusual activity', 'security notice', 'important notice'
-    ];
-
+    // Check for high-risk factors
     if (emailContent.subject) {
         const subjectLower = emailContent.subject.toLowerCase();
-        console.log('Checking subject:', subjectLower);
-        
-        urgencyKeywords.forEach(keyword => {
-            if (subjectLower.includes(keyword.toLowerCase())) {
-                score -= 15;
-                details.push(`Urgency language detected in subject: "${keyword}"`);
-                console.log(`Urgency keyword "${keyword}" found, new score:`, score);
+        const highRiskSubjectPatterns = [
+            'account.*suspended',
+            'security.*breach',
+            'unauthorized.*access',
+            'immediate.*action.*required',
+            'verify.*account.*now'
+        ];
+
+        highRiskSubjectPatterns.forEach(pattern => {
+            if (subjectLower.match(new RegExp(pattern))) {
+                highRiskFactors.push({
+                    type: 'urgency',
+                    detail: `Urgent action demanded in subject: "${emailContent.subject}"`
+                });
             }
         });
     }
 
-    // Check for suspicious links
+    // Check for suspicious sender
+    if (emailContent.sender) {
+        const senderLower = emailContent.sender.toLowerCase();
+        const suspiciousSenderPatterns = [
+            '@.*\\.temp\\.',
+            '@.*\\.fake\\.',
+            '@.*\\.free\\.',
+            'noreply@',
+            'account@',
+            'security@',
+            'support@'
+        ];
+
+        suspiciousSenderPatterns.forEach(pattern => {
+            if (senderLower.match(new RegExp(pattern))) {
+                warnings.push({
+                    type: 'spoofing',
+                    detail: 'Potentially spoofed sender address'
+                });
+            }
+        });
+    }
+
+    // Check body content
+    if (emailContent.body) {
+        const bodyLower = emailContent.body.toLowerCase();
+
+        // Check for sensitive information requests
+        const sensitiveInfoPatterns = [
+            'password',
+            'credit card',
+            'social security',
+            'bank account',
+            'verify.*identity',
+            'confirm.*account'
+        ];
+
+        sensitiveInfoPatterns.forEach(pattern => {
+            if (bodyLower.match(new RegExp(pattern))) {
+                highRiskFactors.push({
+                    type: 'sensitive',
+                    detail: 'Requests for sensitive information detected'
+                });
+            }
+        });
+
+        // Check for urgency/pressure tactics
+        const pressurePatterns = [
+            'within.*24 hours',
+            'account.*suspended',
+            'limited time',
+            'immediate action',
+            'urgent',
+            'expires soon'
+        ];
+
+        pressurePatterns.forEach(pattern => {
+            if (bodyLower.match(new RegExp(pattern))) {
+                warnings.push({
+                    type: 'pressure',
+                    detail: 'Time pressure tactics detected'
+                });
+            }
+        });
+
+        // Check for generic greetings
+        const genericGreetings = [
+            'dear user',
+            'dear customer',
+            'dear account holder',
+            'dear sir/madam'
+        ];
+
+        genericGreetings.forEach(greeting => {
+            if (bodyLower.includes(greeting)) {
+                warnings.push({
+                    type: 'generic',
+                    detail: 'Generic or impersonal greeting used'
+                });
+            }
+        });
+    }
+
+    // Check links
     if (emailContent.links && emailContent.links.length > 0) {
-        console.log('Checking links:', emailContent.links);
         const suspiciousUrlPatterns = [
-            'bit.ly', 'tinyurl', 'goo.gl', 'ow.ly', 't.co',
-            'click.here', 'secure.login', 'account.verify',
-            'signin.verify', 'security.check', 'verify'
+            'bit\\.ly',
+            'tinyurl',
+            'goo\\.gl',
+            'tiny\\.cc',
+            'click\\.here',
+            'verify.*account',
+            'login.*secure'
         ];
 
         emailContent.links.forEach(link => {
             const linkLower = link.toLowerCase();
             suspiciousUrlPatterns.forEach(pattern => {
-                if (linkLower.includes(pattern)) {
-                    score -= 10;
-                    details.push(`Suspicious URL pattern detected: "${pattern}"`);
-                    console.log(`Suspicious URL pattern "${pattern}" found, new score:`, score);
+                if (linkLower.match(new RegExp(pattern))) {
+                    highRiskFactors.push({
+                        type: 'links',
+                        detail: `Suspicious URL pattern detected: ${link}`
+                    });
                 }
             });
         });
     }
 
-    // Check for common phishing phrases in body
-    const phishingPhrases = [
-        'verify your account',
-        'update your payment',
-        'confirm your identity',
-        'account has been compromised',
-        'suspicious activity',
-        'click here to verify',
-        'password expired',
-        'account will be suspended',
-        'unauthorized access',
-        'security breach',
-        'verify your identity',
-        'immediate action required',
-        'failure to comply',
-        'account suspension',
-        'limited time offer',
-        'won a prize',
-        'click here to claim',
-        'enter your credentials',
-        'confirm your password',
-        'unusual login attempt'
-    ];
-
-    if (emailContent.body) {
-        const bodyLower = emailContent.body.toLowerCase();
-        console.log('Checking body:', bodyLower);
-        
-        phishingPhrases.forEach(phrase => {
-            if (bodyLower.includes(phrase.toLowerCase())) {
-                score -= 15;
-                details.push(`Suspicious phrase detected: "${phrase}"`);
-                console.log(`Suspicious phrase "${phrase}" found, new score:`, score);
-            }
-        });
-
-        // Additional checks for urgency indicators in body
-        const timePatterns = ['24 hours', 'immediately', 'urgent action', 'right now', 'as soon as possible'];
-        timePatterns.forEach(pattern => {
-            if (bodyLower.includes(pattern.toLowerCase())) {
-                score -= 10;
-                details.push(`Time pressure tactic detected: "${pattern}"`);
-                console.log(`Time pressure pattern "${pattern}" found, new score:`, score);
-            }
-        });
-
-        // Check for poor grammar or generic greetings
-        const genericGreetings = ['dear user', 'dear customer', 'dear account holder', 'dear sir/madam'];
-        genericGreetings.forEach(greeting => {
-            if (bodyLower.includes(greeting.toLowerCase())) {
-                score -= 10;
-                details.push(`Generic greeting detected: "${greeting}"`);
-                console.log(`Generic greeting "${greeting}" found, new score:`, score);
-            }
-        });
-    }
-
-    // Ensure score stays within 0-100 range
-    score = Math.max(0, Math.min(100, score));
-    console.log('Final score:', score);
-    console.log('Final details:', details);
+    // Compile all details
+    [...highRiskFactors, ...warnings].forEach(item => {
+        details.push(item.detail);
+    });
 
     return {
-        score: score,
-        details: details
+        highRiskFactors,
+        warnings,
+        details
     };
 }
 
@@ -223,5 +238,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ error: error.message });
         }
     }
-    return true; // Keep the message channel open for async response
+    return true;
 }); 
