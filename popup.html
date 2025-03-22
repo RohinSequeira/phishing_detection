@@ -51,28 +51,6 @@
       border: 1px solid #c8e6c9;
     }
 
-    .warning-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 15px 0;
-    }
-
-    .badge {
-      padding: 6px 12px;
-      border-radius: 15px;
-      font-size: 13px;
-      background: #f1f3f4;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .badge.active {
-      background: #ffeaa7;
-      color: #d35400;
-    }
-
     .details {
       margin-top: 15px;
       font-size: 13px;
@@ -131,15 +109,6 @@
     
     <div id="results" style="display: none;">
       <div id="riskLevel" class="risk-level"></div>
-      
-      <div class="warning-badges" id="warningBadges">
-        <div class="badge" data-type="urgency">🚨 Urgency Tactics</div>
-        <div class="badge" data-type="links">🔗 Suspicious Links</div>
-        <div class="badge" data-type="generic">👤 Generic/Impersonal</div>
-        <div class="badge" data-type="sensitive">⚠️ Asks for Sensitive Info</div>
-        <div class="badge" data-type="pressure">🕒 Time Pressure</div>
-        <div class="badge" data-type="spoofing">🏢 Possible Spoofing</div>
-      </div>
       
       <div id="details" class="details">
         <!-- Details will be populated by JavaScript -->

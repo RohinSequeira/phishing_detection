@@ -2,16 +2,15 @@
   "manifest_version": 3,
   "name": "Email Phishing Detector",
   "version": "1.0",
-  "description": "Detects potential phishing attempts in emails",
+  "description": "Detects potential phishing attempts in emails using AI-powered analysis",
   "permissions": [
     "activeTab",
-    "scripting",
     "tabs"
   ],
   "host_permissions": [
     "*://mail.google.com/*",
-    "*://outlook.live.com/*",
-    "*://outlook.office.com/*",
+    "*://*.outlook.live.com/*",
+    "*://*.outlook.office.com/*",
     "*://mail.yahoo.com/*"
   ],
   "action": {
@@ -31,11 +30,11 @@
     {
       "matches": [
         "*://mail.google.com/*",
-        "*://outlook.live.com/*",
-        "*://outlook.office.com/*",
+        "*://*.outlook.live.com/*",
+        "*://*.outlook.office.com/*",
         "*://mail.yahoo.com/*"
       ],
-      "js": ["content.js"]
+      "js": ["config.js", "content.js"]
     }
   ]
 } 
