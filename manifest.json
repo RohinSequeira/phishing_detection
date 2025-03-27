@@ -5,14 +5,25 @@
   "description": "Detects potential phishing attempts in emails using AI-powered analysis",
   "permissions": [
     "activeTab",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "host_permissions": [
     "*://mail.google.com/*",
     "*://*.outlook.live.com/*",
     "*://*.outlook.office.com/*",
-    "*://mail.yahoo.com/*"
+    "*://mail.yahoo.com/*",
+    "https://gmail.googleapis.com/*"
   ],
+  "oauth2": {
+    "client_id": "384435032233-evh45312eeed6ale5u2le1vbo19pbdi3.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.modify"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

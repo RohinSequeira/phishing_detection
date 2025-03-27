@@ -57,21 +57,34 @@
       color: #636e72;
     }
 
-    .scan-btn {
+    .scan-btn, .report-btn {
       display: block;
       width: 100%;
       padding: 10px;
-      background: #6c5ce7;
       color: white;
       border: none;
       border-radius: 8px;
       font-size: 14px;
       cursor: pointer;
       transition: background 0.3s;
+      margin-bottom: 10px;
+    }
+
+    .scan-btn {
+      background: #6c5ce7;
     }
 
     .scan-btn:hover {
       background: #5f3dc4;
+    }
+
+    .report-btn {
+      background: #e74c3c;
+      display: none;
+    }
+
+    .report-btn:hover {
+      background: #c0392b;
     }
 
     .loading {
@@ -81,6 +94,14 @@
 
     .error-message {
       color: #ff7675;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .success-message {
+      color: #2ecc71;
       text-align: center;
       margin-top: 10px;
       font-size: 13px;
@@ -106,6 +127,7 @@
   <div class="container">
     <h1>✉️ Phishing Detector</h1>
     <button id="scanBtn" class="scan-btn">Scan Current Email</button>
+    <button id="reportBtn" class="report-btn">Report as Phishing</button>
     
     <div id="results" style="display: none;">
       <div id="riskLevel" class="risk-level"></div>
@@ -126,6 +148,7 @@
       Analyzing email... 🔍
     </div>
     <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
   </div>
   <script src="popup.js"></script>
 </body>

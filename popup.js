@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const scanBtn = document.getElementById('scanBtn');
+    const reportBtn = document.getElementById('reportBtn');
     const results = document.getElementById('results');
     const loading = document.getElementById('loading');
     const riskLevel = document.getElementById('riskLevel');
     const details = document.getElementById('details');
     const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
     const recommendationsList = document.getElementById('recommendationsList');
 
     scanBtn.addEventListener('click', async () => {
@@ -12,6 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loading.style.display = 'block';
         results.style.display = 'none';
         errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+        reportBtn.style.display = 'none';
         scanBtn.disabled = true;
 
         try {
@@ -57,6 +61,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    reportBtn.addEventListener('click', async () => {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            if (!tab.url.includes('mail.google.com')) {
+                throw new Error('Phishing reporting is currently only supported for Gmail.');
+            }
+
+            reportBtn.disabled = true;
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+
+            const response = await new Promise((resolve, reject) => {
+                chrome.tabs.sendMessage(tab.id, { action: "reportPhishing" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    if (!response) {
+                        reject(new Error('Empty response from content script'));
+                        return;
+                    }
+                    resolve(response);
+                });
+            });
+
+            if (response.success) {
+                successMessage.textContent = 'Email successfully reported as phishing!';
+                successMessage.style.display = 'block';
+            } else {
+                throw new Error(response.error || 'Failed to report phishing email');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            errorMessage.textContent = error.message || 'Error reporting phishing email. Please try again.';
+            errorMessage.style.display = 'block';
+        } finally {
+            loading.style.display = 'none';
+            reportBtn.disabled = false;
+        }
+    });
+
     function displayResults(analysis) {
         results.style.display = 'block';
 
@@ -72,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Do not reply to this email',
                 'Report this email as phishing'
             ];
+            reportBtn.style.display = 'block';
         } else if (analysis.warnings?.length > 0) {
             riskClass = 'suspicious';
             riskText = '🟡 Suspicious - Exercise Caution';

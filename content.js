@@ -291,6 +291,210 @@ async function analyzeEmail(emailContent) {
     return { highRiskFactors, warnings, contextualAnalysis };
 }
 
+// Function to report phishing email
+async function reportPhishingEmail(messageId) {
+    try {
+        // Send message to background script to handle the API call
+        const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(
+                { 
+                    action: "reportPhishing",
+                    messageId: messageId
+                },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    resolve(response);
+                }
+            );
+        });
+
+        return response;
+    } catch (error) {
+        console.error('Error reporting phishing:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Function to get current email message ID
+function getCurrentEmailMessageId() {
+    if (window.location.hostname.includes('mail.google.com')) {
+        console.log('Current URL:', window.location.href);
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Current hash:', window.location.hash);
+        
+        // Try different URL patterns
+        const url = window.location.href;
+        
+        // Pattern 1: /mail/u/0/#inbox/[messageId]
+        const inboxMatch = url.match(/\/mail\/u\/\d+\/#inbox\/([a-zA-Z0-9]+)/);
+        if (inboxMatch) {
+            const messageId = inboxMatch[1];
+            console.log('Found inbox match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from inbox pattern:', messageId);
+                return messageId;
+            }
+        }
+        
+        // Pattern 2: /mail/u/0/#search/[messageId]
+        const searchMatch = url.match(/\/mail\/u\/\d+\/#search\/([a-zA-Z0-9]+)/);
+        if (searchMatch) {
+            const messageId = searchMatch[1];
+            console.log('Found search match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from search pattern:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 3: /mail/u/0/#search/from%3A+email/CllgCJvnrrSWfJdQHhrcSgKKsbgdmhKvbdZcSQMbNSpKrZVKbBtjfqHgQCJMgcNhqKBFWgMGGVB
+        const searchResultMatch = url.match(/\/mail\/u\/\d+\/#search\/[^/]+\/([a-zA-Z0-9]+)/);
+        if (searchResultMatch) {
+            const messageId = searchResultMatch[1];
+            console.log('Found search result match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from search result pattern:', messageId);
+                return messageId;
+            }
+        }
+        
+        // Pattern 4: /mail/u/0/#inbox/[messageId]?compose=
+        const composeMatch = url.match(/\/mail\/u\/\d+\/#inbox\/([a-zA-Z0-9]+)\?compose=/);
+        if (composeMatch) {
+            const messageId = composeMatch[1];
+            console.log('Found compose match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from compose pattern:', messageId);
+                return messageId;
+            }
+        }
+        
+        // Pattern 5: URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const messageId = urlParams.get('messageid') || urlParams.get('id');
+        if (messageId) {
+            console.log('Found URL parameter match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from URL parameters:', messageId);
+                return messageId;
+            }
+        }
+        
+        // Pattern 6: Try to get from the email view
+        const emailView = document.querySelector('[data-message-id]');
+        if (emailView) {
+            const messageId = emailView.getAttribute('data-message-id');
+            console.log('Found email view match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from email view:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 7: Try to get from the message thread
+        const messageThread = document.querySelector('[data-thread-id]');
+        if (messageThread) {
+            const threadId = messageThread.getAttribute('data-thread-id');
+            console.log('Found thread match:', threadId);
+            if (isValidMessageId(threadId)) {
+                console.log('Valid thread ID:', threadId);
+                return threadId;
+            }
+        }
+
+        // Pattern 8: Try to get from the message header
+        const messageHeader = document.querySelector('.h7');
+        if (messageHeader) {
+            const messageId = messageHeader.getAttribute('data-message-id');
+            console.log('Found header match:', messageId);
+            if (messageId && isValidMessageId(messageId)) {
+                console.log('Valid message ID from header:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 9: Try to get from the message container
+        const messageContainer = document.querySelector('.a3s.aiL');
+        if (messageContainer) {
+            const messageId = messageContainer.closest('[data-message-id]')?.getAttribute('data-message-id');
+            console.log('Found container match:', messageId);
+            if (messageId && isValidMessageId(messageId)) {
+                console.log('Valid message ID from container:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 10: Try to get from the message list item
+        const messageListItem = document.querySelector('.UI table tr[data-thread-id]');
+        if (messageListItem) {
+            const messageId = messageListItem.getAttribute('data-thread-id');
+            console.log('Found list item match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from list item:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 11: Try to get from the message view container
+        const messageViewContainer = document.querySelector('.a3s.aiL').closest('[data-message-id]');
+        if (messageViewContainer) {
+            const messageId = messageViewContainer.getAttribute('data-message-id');
+            console.log('Found view container match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from view container:', messageId);
+                return messageId;
+            }
+        }
+
+        // Pattern 12: Try to get from the search result container
+        const searchResultContainer = document.querySelector('.UI table tr[data-thread-id]');
+        if (searchResultContainer) {
+            const messageId = searchResultContainer.getAttribute('data-thread-id');
+            console.log('Found search result container match:', messageId);
+            if (isValidMessageId(messageId)) {
+                console.log('Valid message ID from search result container:', messageId);
+                return messageId;
+            }
+        }
+
+        // Log all data-message-id attributes found on the page
+        const allMessageIds = document.querySelectorAll('[data-message-id]');
+        console.log('All data-message-id elements found:', allMessageIds.length);
+        allMessageIds.forEach((el, index) => {
+            console.log(`Message ID ${index + 1}:`, el.getAttribute('data-message-id'));
+        });
+        
+        console.log('Could not find valid message ID in any pattern');
+        return null;
+    }
+    return null;
+}
+
+// Helper function to validate message ID
+function isValidMessageId(messageId) {
+    if (!messageId) {
+        console.log('Message ID is null or undefined');
+        return false;
+    }
+    
+    // Gmail message IDs are typically long strings of alphanumeric characters
+    // They don't contain special characters or spaces
+    const validMessageIdPattern = /^[a-zA-Z0-9]+$/;
+    
+    const isValid = validMessageIdPattern.test(messageId) && messageId.length > 10;
+    console.log('Message ID validation:', {
+        messageId,
+        matchesPattern: validMessageIdPattern.test(messageId),
+        length: messageId.length,
+        isValid
+    });
+    
+    return isValid;
+}
+
 // Update message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getEmailContent") {
@@ -302,6 +506,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } catch (error) {
                 console.error('Error in content script:', error);
                 sendResponse({ error: error.message });
+            }
+        })();
+        return true;
+    }
+    if (request.action === "reportPhishing") {
+        (async () => {
+            try {
+                const messageId = getCurrentEmailMessageId();
+                if (!messageId) {
+                    throw new Error('Could not find email message ID');
+                }
+                const result = await reportPhishingEmail(messageId);
+                sendResponse(result);
+            } catch (error) {
+                console.error('Error reporting phishing:', error);
+                sendResponse({ success: false, error: error.message });
             }
         })();
         return true;
