@@ -363,6 +363,18 @@ async function reportPhishing() {
 
 // Update message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "extractEmailContent") {
+        try {
+            const emailContent = extractEmailContent();
+            console.log('Content script: Extracted email content:', emailContent);
+            sendResponse(emailContent);  // Make sure we send the response
+        } catch (error) {
+            console.error('Content script: Error extracting email content:', error);
+            sendResponse({ error: error.message });
+        }
+        return true;  // This is crucial - it tells Chrome to keep the message channel open
+    }
+    
     if (request.action === "getEmailContent") {
         (async () => {
             try {
@@ -388,5 +400,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         })();
         return true;
     }
+    if (request.action === "analyzeEmail") {
+        (async () => {
+            try {
+                console.log('Content script: Received analyzeEmail request with:', request.emailContent);
+                if (!request.emailContent) {
+                    console.error('Content script: No email content provided');
+                    sendResponse({ error: 'No email content provided' });
+                    return;
+                }
+                const analysis = await analyzeEmail(request.emailContent);
+                console.log('Content script: Analysis complete:', analysis);
+                sendResponse(analysis);
+            } catch (error) {
+                console.error('Content script: Error in analyzeEmail:', error);
+                sendResponse({ error: error.message });
+            }
+        })();
+        return true;  // This is crucial - it tells Chrome to keep the message channel open
+    }
     return true;
 }); 
+
